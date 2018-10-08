@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd">
+	<!-- 配置加载外部资源 -->
+	<context:property-placeholder location="classpath:db.properties"/>
+	<!-- 配置数据库连接池 -->
+	<bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+		<!-- 配置参数 -->
+		<property name="driverClass" value="${jdbc.driver}"></property>
+		<property name="jdbcUrl" value="${jdbc.url}"></property>
+		<property name="user" value="${jdbc.username}"></property>
+		<property name="password" value="${jdbc.password}"></property>
+	</bean>
+	<!-- 配置sqlSessionFactory -->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<!-- 配置数据源 -->
+		<property name="dataSource" ref="dataSource"></property>
+		<!-- 配置起别名 -->
+		<property name="typeAliasesPackage" value="com.hpe.pojo"></property>
+		<!-- 配置通用mapper -->
+		<property name="plugins">
+			<array>
+				<!-- pagehelper分页配置。 -->
+				<bean class="com.github.pagehelper.PageInterceptor">
+					<property name="properties">
+						<value>
+							helperDialect=mysql
+							offsetAsPageNum=true
+							<!-- 防止出现小于第一页，大于最后一页的异常情况出现。 -->
+							reasonable=true
+						</value>
+					</property>
+				</bean>
+				<bean class="com.github.abel533.mapperhelper.MapperInterceptor">
+					<property name="properties">
+						<value>
+							<!-- 主键自增回写方法,默认值MYSQL -->
+							IDENTITY=MYSQL
+							mappers=com.github.abel533.mapper.Mapper
+						</value>
+					</property>
+				</bean>
+
+			</array>
+
+		</property>
+	</bean>
+	<!-- 配置事务 -->
+	<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource"></property>
+	</bean>
+	<!-- 配置事务注解驱动 -->
+	<tx:annotation-driven transaction-manager="transactionManager"/>
+	<!-- 配置mapper的对象 -->
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<property name="basePackage" value="com.hpe.mapper"></property>
+	</bean>
+	<!-- 配置service层的对象 -->
+	<context:component-scan base-package="com.hpe.service"></context:component-scan>
+</beans>
